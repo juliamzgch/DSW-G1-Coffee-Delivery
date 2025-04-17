@@ -46,6 +46,7 @@ interface CoffeeInCart {
 
 const DELIVERY_PRICE = 3.75;
 
+
 export function Cart() {
   const [coffeesInCart, setCoffeesInCart] = useState<CoffeeInCart[]>([
     {
@@ -81,6 +82,20 @@ export function Cart() {
   ]);
 
   const amountTags: string[] = [];
+  const [paymentMethod, setPaymentMethod] = useState<'credit' | 'debit' | 'pix'>('pix')
+  const paymentOptions = {
+    credit: { label: 'Cartão de Crédito', taxa: 0.0385 },
+    debit: { label: 'Cartão de Débito', taxa: 0.0185 },
+    pix: { label: 'Pix ou Dinheiro', taxa: 0 },
+  }
+
+
+const taxa = paymentOptions[paymentMethod].taxa
+const subtotal = coffeesInCart.reduce(
+  (acc, item) => acc + item.price * item.quantity,
+  0,
+)
+
   
   coffeesInCart.map(coffee => coffee.tags.map((tag) => {
     if (!amountTags.includes(tag)) {
@@ -91,6 +106,8 @@ export function Cart() {
   const totalItemsPrice = coffeesInCart.reduce((currencyValue, coffee) => {
     return currencyValue + coffee.price * coffee.quantity
   }, 0);
+
+  const total = totalItemsPrice + DELIVERY_PRICE + totalItemsPrice * taxa
 
   function handleItemIncrement(id: string) {
     setCoffeesInCart((prevState) =>
@@ -154,33 +171,16 @@ export function Cart() {
 
             <PaymentOptions>
               <div>
-                <Radio
-                  isSelected={false}
-                  onClick={() => {}}
-                  value="credit"
-                >
-                  <CreditCard size={16} />
-                  <span>Cartão de crédito</span>
-                </Radio>
-
-                <Radio
-                  isSelected={false}
-                  onClick={() => {}}
-                  value="debit"
-                >
-                  <Bank size={16} />
-                  <span>Cartão de débito</span>
-                </Radio>
-
-                <Radio
-                  isSelected={true}
-                  onClick={() => {}}
-                  value="cash"
-                >
-                  <Money size={16} />
-                  <span>Pix ou Dinheiro</span>
-                </Radio>
+                {Object.entries(paymentOptions).map(([key, { label }]) => (
+                  <Radio
+                      onClick={() => setPaymentMethod(key as any)}
+                      isSelected={paymentMethod === key}
+                    >
+                     {label}
+                    </Radio>  
+                  ))}
               </div>
+              
 
               {false ? (
                 <PaymentErrorMessage role="alert">
@@ -248,9 +248,22 @@ export function Cart() {
                 {new Intl.NumberFormat('pt-br', {
                   currency: 'BRL',
                   style: 'currency',
-                }).format(DELIVERY_PRICE)}
+                }).format(DELIVERY_PRICE * amountTags.length)}
               </span>
             </div>
+
+            <div>
+              <span>
+                Juros <b>({paymentOptions[paymentMethod].label})</b>
+              </span>
+              <span>
+                  {new Intl.NumberFormat('pt-br', {
+                    currency: 'BRL',
+                    style: 'currency',
+                  }).format(subtotal * taxa)}
+                </span>
+            </div>
+            
 
             <div>
               <span>Total</span>
@@ -258,10 +271,11 @@ export function Cart() {
                 {new Intl.NumberFormat('pt-br', {
                   currency: 'BRL',
                   style: 'currency',
-                }).format(totalItemsPrice + (DELIVERY_PRICE * amountTags.length))}
+                }).format(total + (DELIVERY_PRICE * amountTags.length))}
               </span>
             </div>
           </CartTotalInfo>
+   
 
           <CheckoutButton type="submit" form="order">
             Confirmar pedido

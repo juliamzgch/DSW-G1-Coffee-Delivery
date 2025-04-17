@@ -22,19 +22,36 @@ interface Coffee {
 export function Home() {
   const theme = useTheme();
   const [coffees, setCoffees] = useState<Coffee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTag, setActiveTag] = useState('');
+  const uniqueTags = Array.from(new Set(coffees.flatMap(coffee => coffee.tags)));
+  
 
   useEffect(() => {
-    async function fetchCoffees() {
-      const response = await api('/coffees');
-      setCoffees(response.data);
-
-      console.log({coffees: response.data});
+    async function fetchCoffeeData() {
+      try {
+        const response = await api.get("/coffees")
+        const ordered = response.data.sort((a: any, b: any) =>
+          a.title.localeCompare(b.title),
+        )
+        setCoffees(ordered)
+      } catch (error) {
+        console.error("Erro ao buscar os cafés:", error)
+      } finally {
+        setLoading(false)
+      }
     }
-    fetchCoffees();
+    fetchCoffeeData();
   }, []);
 
-
+  function handleToggleTag(tag: string) {
+    setActiveTag(prev => (prev === tag ? '' : tag))
+  }
   
+  const filteredCoffees = activeTag
+      ? coffees.filter(coffee => coffee.tags.includes(activeTag))
+      : coffees
+ 
   function incrementQuantity(id: string) {
     setCoffees((prevState) =>
       prevState.map((coffee) => {
@@ -146,32 +163,19 @@ export function Home() {
 
         <h2>Nossos cafés</h2>
         <Navbar>
+        {uniqueTags.map(tag => (
           <Radio
-            onClick={() => {}}
-            isSelected={false}
-            value="tradicional"
+            onClick={() => handleToggleTag(tag)}
+            isSelected={activeTag === tag}
           >
-            <span>Tradicional</span>
+            <span>{tag}</span>
           </Radio>
-          <Radio
-            onClick={() => {}}
-            isSelected={false}
-            value="gelado"
-          >
-            <span>Gelado</span>
-          </Radio>
-          <Radio
-            onClick={() => {}}
-            isSelected={false}
-            value="com leite"
-          >
-            <span>Com leite</span>
-          </Radio>
+          ))}
         </Navbar>
 
 
         <div>
-          {coffees.map((coffee) => (
+          {filteredCoffees.map((coffee) => (
             <CoffeeCard
               key={coffee.id}
               coffee={coffee}
