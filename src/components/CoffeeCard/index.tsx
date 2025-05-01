@@ -38,7 +38,7 @@ export function CoffeeCard({ coffee, incrementQuantity, decrementQuantity, handl
 
   return (
     <Container>
-      <CoffeeImg src={"/images/coffees/expresso-cremoso.png"} alt="Expresso Tradicional" />
+      <CoffeeImg src={coffee.image} alt="Expresso Tradicional" />
 
       <Tags>
         {coffee.tags.map((tag) => <span key={tag}>{tag}</span>)}
